@@ -25,7 +25,7 @@ from django.core.cache import (
     cache,
     caches,
 )
-from django.core.cache.backends.base import InvalidCacheBackendError
+from django.core.cache.backends.base import BaseCache, InvalidCacheBackendError
 from django.core.cache.backends.redis import RedisCacheClient
 from django.core.cache.utils import make_template_fragment_key
 from django.db import close_old_connections, connection, connections
@@ -1164,6 +1164,52 @@ class BaseCacheTests:
             # default value should be returned.
             cache_add.return_value = False
             self.assertEqual(cache.get_or_set("key", "default"), "default")
+
+    def test_aget_many_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("aget_many")
+        if overridden is None and cache.get_many.__func__ is not BaseCache.get_many:
+            self.assertIs(cache.aget_many.__func__, BaseCache.aget_many)
+
+    def test_aset_many_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("aset_many")
+        if overridden is None and cache.set_many.__func__ is not BaseCache.set_many:
+            self.assertIs(cache.aset_many.__func__, BaseCache.aset_many)
+
+    def test_adelete_many_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("adelete_many")
+        if (
+            overridden is None
+            and cache.delete_many.__func__ is not BaseCache.delete_many
+        ):
+            self.assertIs(cache.adelete_many.__func__, BaseCache.adelete_many)
+
+    def test_aget_or_set_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("aget_or_set")
+        if overridden is None and cache.get_or_set.__func__ is not BaseCache.get_or_set:
+            self.assertIs(cache.aget_or_set.__func__, BaseCache.aget_or_set)
+
+    def test_ahas_key_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("ahas_key")
+        if overridden is None and cache.has_key.__func__ is not BaseCache.has_key:
+            self.assertIs(cache.ahas_key.__func__, BaseCache.ahas_key)
+
+    def test_aincr_version_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("aincr_version")
+        if (
+            overridden is None
+            and cache.incr_version.__func__ is not BaseCache.incr_version
+        ):
+            self.assertIs(cache.aincr_version.__func__, BaseCache.aincr_version)
+
+    def test_aincr_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("aincr")
+        if overridden is None and cache.incr.__func__ is not BaseCache.incr:
+            self.assertIs(cache.aincr.__func__, BaseCache.aincr)
+
+    def test_aclose_uses_specialized_implementation(self):
+        overridden = cache.__dict__.get("aclose")
+        if overridden is None and cache.close.__func__ is not BaseCache.close:
+            self.assertIs(cache.aclose.__func__, BaseCache.aclose)
 
 
 @override_settings(
