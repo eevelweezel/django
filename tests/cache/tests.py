@@ -298,10 +298,8 @@ _caches_setting_base = {
     "v2": {"VERSION": 2},
     "custom_key": {"KEY_FUNCTION": custom_key_func},
     "custom_key2": {"KEY_FUNCTION": "cache.tests.custom_key_func"},
-    "cull": {"OPTIONS": {"MAX_ENTRIES": 30, "CULL_EVERY_X": 0}},
-    "zero_cull": {
-        "OPTIONS": {"CULL_FREQUENCY": 0, "MAX_ENTRIES": 30, "CULL_EVERY_X": 0}
-    },
+    "cull": {"OPTIONS": {"MAX_ENTRIES": 30}},
+    "zero_cull": {"OPTIONS": {"CULL_FREQUENCY": 0, "MAX_ENTRIES": 30}},
 }
 
 
@@ -687,12 +685,13 @@ class BaseCacheTests:
         cache.set("key1", "spam", 100.2)
         self.assertEqual(cache.get("key1"), "spam")
 
-    def _perform_cull_test(self, cull_cache_name, initial_count, final_count):
+    def _perform_cull_test(
+        self, cull_cache_name, initial_count, final_count, db_cache_n_queries=0
+    ):
         try:
             cull_cache = caches[cull_cache_name]
         except InvalidCacheBackendError:
             self.skipTest("Culling isn't implemented.")
-
         # Create initial cache key entries. This will overflow the cache,
         # causing a cull.
         for i in range(1, initial_count):
@@ -705,9 +704,13 @@ class BaseCacheTests:
         self.assertEqual(count, final_count)
 
     def test_cull(self):
+        if hasattr(caches["cull"].__class__, "_cull_n"):
+            caches["cull"].__class__._cull_n = 0
         self._perform_cull_test("cull", 50, 29)
 
     def test_zero_cull(self):
+        if hasattr(caches["zero_cull"].__class__, "_cull_n"):
+            caches["zero_cull"].__class__._cull_n = 0
         self._perform_cull_test("zero_cull", 50, 19)
 
     def test_cull_delete_when_store_empty(self):
