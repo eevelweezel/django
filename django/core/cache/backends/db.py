@@ -3,6 +3,7 @@
 import base64
 import pickle
 from datetime import UTC, datetime
+from random import randint
 
 from django.conf import settings
 from django.core.cache.backends.base import DEFAULT_TIMEOUT, BaseCache
@@ -47,6 +48,7 @@ class DatabaseCache(BaseDatabaseCache):
     # conversion and adaptation infrastructure is then used to avoid comparing
     # aware and naive datetimes accidentally.
 
+    cull_interval = 5
     pickle_protocol = pickle.HIGHEST_PROTOCOL
 
     def get(self, key, default=None, version=None):
@@ -128,7 +130,8 @@ class DatabaseCache(BaseDatabaseCache):
                 tz = UTC if settings.USE_TZ else None
                 exp = datetime.fromtimestamp(timeout, tz=tz)
             exp = exp.replace(microsecond=0)
-            if num > self._max_entries:
+            cull_check = randint(0, self.cull_interval)
+            if num > self._max_entries and cull_check == self.cull_interval:
                 self._cull(db, cursor, now, num)
             pickled = pickle.dumps(value, self.pickle_protocol)
             # The DB column is expecting a string, so make sure the value is a
