@@ -298,8 +298,10 @@ _caches_setting_base = {
     "v2": {"VERSION": 2},
     "custom_key": {"KEY_FUNCTION": custom_key_func},
     "custom_key2": {"KEY_FUNCTION": "cache.tests.custom_key_func"},
-    "cull": {"OPTIONS": {"MAX_ENTRIES": 30}},
-    "zero_cull": {"OPTIONS": {"CULL_FREQUENCY": 0, "MAX_ENTRIES": 30}},
+    "cull": {"OPTIONS": {"MAX_ENTRIES": 30, "CULL_EVERY_X": 0}},
+    "zero_cull": {
+        "OPTIONS": {"CULL_FREQUENCY": 0, "MAX_ENTRIES": 30, "CULL_EVERY_X": 0}
+    },
 }
 
 

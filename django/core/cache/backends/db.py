@@ -34,6 +34,13 @@ class BaseDatabaseCache(BaseCache):
     def __init__(self, table, params):
         super().__init__(params)
         self._table = table
+        # Override is a convenience for testing. Refs. #32785.
+        options = params.get("OPTIONS", {})
+        cull_every_x = params.get("cull_every_x", options.get("CULL_EVERY_X", 5))
+        try:
+            self._cull_every_x = int(cull_every_x)
+        except (ValueError, TypeError):
+            self._cull_every_x = 5
 
         class CacheEntry:
             _meta = Options(table)
@@ -48,7 +55,6 @@ class DatabaseCache(BaseDatabaseCache):
     # conversion and adaptation infrastructure is then used to avoid comparing
     # aware and naive datetimes accidentally.
 
-    cull_interval = 5
     pickle_protocol = pickle.HIGHEST_PROTOCOL
 
     def get(self, key, default=None, version=None):
@@ -130,8 +136,8 @@ class DatabaseCache(BaseDatabaseCache):
                 tz = UTC if settings.USE_TZ else None
                 exp = datetime.fromtimestamp(timeout, tz=tz)
             exp = exp.replace(microsecond=0)
-            cull_check = randint(0, self.cull_interval)
-            if num > self._max_entries and cull_check == self.cull_interval:
+            cull_check = randint(0, self._cull_every_x)
+            if num > self._max_entries and cull_check == self._cull_every_x:
                 self._cull(db, cursor, now, num)
             pickled = pickle.dumps(value, self.pickle_protocol)
             # The DB column is expecting a string, so make sure the value is a
